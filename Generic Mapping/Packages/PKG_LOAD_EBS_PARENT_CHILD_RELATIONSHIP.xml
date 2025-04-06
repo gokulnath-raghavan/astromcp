@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?><Session>
+<Field name="Session Name">PKG_LOAD_EBS_PARENT_CHILD_RELATIONSHIP</Field>
+<Field name="Context Code">GLOBAL</Field>
+<SessStep>
+<Field name="Step Name">Load parent-child relationship to STG_T_PARENT_CHILD_D_1 table</Field>
+<Field name="Step No">0</Field>
+<Field name="Ok Exit">false</Field>
+<Field name="Ko Exit">true</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">MAP_BEGIN</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">EU</Field>
+<Field name="Task Name 3">LGL_DW_STG_UNIT</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">Truncate target table</Field>
+<Field name="Task Name 2">IKM Oracle Insert</Field>
+<Field name="Exe Channel">JDBC</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Isolation Level">DEFAULT</Field>
+<Field name="Target Technology Internal Name">GENERIC_SQL</Field>
+<Target>
+<Field name="Text">
+truncate table DEV_STG_USP.STG_T_PARENT_CHILD_D_1
+           </Field>
+</Target>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">MAP_MAIN</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">EU</Field>
+<Field name="Task Name 3">LGL_DW_STG_UNIT</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_MAIN</Field>
+<Field name="Task Name 1">Insert new rows</Field>
+<Field name="Task Name 2">IKM Oracle Insert</Field>
+<Field name="Task Name 3">Load STG_T_PARENT_CHILD_D_1</Field>
+<Field name="Exe Channel">JDBC</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Isolation Level">DEFAULT</Field>
+<Field name="Target Technology Internal Name">ORACLE</Field>
+<Target>
+<Field name="Text">
+INSERT 
+  /*+  APPEND PARALLEL  */ 
+  INTO DEV_STG_USP.STG_T_PARENT_CHILD_D_1
+  (
+    SOURCE ,
+    GENERIC_ID ,
+    DIM_NAME ,
+    PARENT ,
+    CHILD ,
+    BASE_LEVEL_FLAG 
+  ) 
+SELECT 
+  '#DW.Var_Source' ,
+  DISTINCT_1.FLEX_VALUE_SET_ID ,
+  UPPER(REPLACE(REPLACE(TRIM(DISTINCT_1.SEGMENT_NAME), ' ', '_'),'-','_')) ,
+  DISTINCT_1.PARENT_FLEX_VALUE ,
+  DISTINCT_1.FLEX_VALUE ,
+  DISTINCT_1.SUMMARY_FLAG  
+FROM 
+  (
+SELECT 
+  DISTINCT 
+  DISTINCT_.FLEX_VALUE_SET_ID AS FLEX_VALUE_SET_ID ,
+  DISTINCT_.PARENT_FLEX_VALUE AS PARENT_FLEX_VALUE ,
+  DISTINCT_.FLEX_VALUE AS FLEX_VALUE ,
+  DISTINCT_.SUMMARY_FLAG AS SUMMARY_FLAG ,
+  DISTINCT_.SEGMENT_NAME AS SEGMENT_NAME   
+FROM 
+  (
+SELECT 
+  DISTINCT 
+  STG_FND_FLEX_VALUE_NORM_HIER.FLEX_VALUE_SET_ID AS FLEX_VALUE_SET_ID ,
+  STG_FND_FLEX_VALUE_NORM_HIER.PARENT_FLEX_VALUE AS PARENT_FLEX_VALUE ,
+  STG_FND_FLEX_VALUES_VL.FLEX_VALUE AS FLEX_VALUE ,
+  STG_FND_FLEX_VALUES_VL.SUMMARY_FLAG AS SUMMARY_FLAG ,
+  STG_FND_ID_FLEX_SEGMENTS.SEGMENT_NAME AS SEGMENT_NAME   
+FROM 
+  (DEV_STG_USP.STG_FND_FLEX_VALUE_NORM_HIER STG_FND_FLEX_VALUE_NORM_HIER  INNER JOIN  DEV_STG_USP.STG_FND_FLEX_VALUES_VL STG_FND_FLEX_VALUES_VL  
+    ON  1=1
+     )  INNER JOIN  DEV_STG_USP.STG_FND_ID_FLEX_SEGMENTS STG_FND_ID_FLEX_SEGMENTS  
+    ON  STG_FND_FLEX_VALUES_VL.FLEX_VALUE BETWEEN  STG_FND_FLEX_VALUE_NORM_HIER.CHILD_FLEX_VALUE_LOW AND  STG_FND_FLEX_VALUE_NORM_HIER.CHILD_FLEX_VALUE_HIGH AND STG_FND_FLEX_VALUES_VL.FLEX_VALUE_SET_ID  = STG_FND_FLEX_VALUE_NORM_HIER.FLEX_VALUE_SET_ID 
+AND STG_FND_ID_FLEX_SEGMENTS.FLEX_VALUE_SET_ID = STG_FND_FLEX_VALUES_VL.FLEX_VALUE_SET_ID
+AND STG_FND_ID_FLEX_SEGMENTS.ID_FLEX_NUM in (#DW.Var_EBS_COA)
+WHERE
+  (STG_FND_ID_FLEX_SEGMENTS.APPLICATION_ID =101 
+AND STG_FND_ID_FLEX_SEGMENTS.ID_FLEX_CODE ='GL#' 
+AND (STG_FND_FLEX_VALUE_NORM_HIER.PARENT_FLEX_VALUE&lt;&gt;STG_FND_FLEX_VALUE_NORM_HIER.CHILD_FLEX_VALUE_LOW and STG_FND_FLEX_VALUE_NORM_HIER.PARENT_FLEX_VALUE&lt;&gt;STG_FND_FLEX_VALUE_NORM_HIER.CHILD_FLEX_VALUE_HIGH)
+) 
+  ) DISTINCT_  
+WHERE
+  (DISTINCT_.PARENT_FLEX_VALUE&lt;&gt;DISTINCT_.FLEX_VALUE
+) 
+  ) DISTINCT_1  
+       </Field>
+</Target>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+<SessStep>
+<Field name="Step Name">Load the description of the parents to STG_T_PARENT_CHILD_D_2</Field>
+<Field name="Step No">1</Field>
+<Field name="Ok Exit">false</Field>
+<Field name="Ko Exit">true</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">MAP_BEGIN</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">EU</Field>
+<Field name="Task Name 3">LGL_DW_STG_UNIT</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">MAP_BEGIN</Field>
+<Field name="Task Name 1">Truncate target table</Field>
+<Field name="Task Name 2">IKM Oracle Insert</Field>
+<Field name="Exe Channel">JDBC</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Isolation Level">DEFAULT</Field>
+<Field name="Target Technology Internal Name">GENERIC_SQL</Field>
+<Target>
+<Field name="Text">
+truncate table DEV_STG_USP.STG_T_PARENT_CHILD_D_2
+           </Field>
+</Target>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">MAP_MAIN</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">EU</Field>
+<Field name="Task Name 3">LGL_DW_STG_UNIT</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_MAIN</Field>
+<Field name="Task Name 1">Insert new rows</Field>
+<Field name="Task Name 2">IKM Oracle Insert</Field>
+<Field name="Task Name 3">Load STG_T_PARENT_CHILD_D_2</Field>
+<Field name="Exe Channel">JDBC</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Isolation Level">DEFAULT</Field>
+<Field name="Target Technology Internal Name">ORACLE</Field>
+<Target>
+<Field name="Text">
+INSERT 
+  /*+  APPEND PARALLEL  */ 
+  INTO DEV_STG_USP.STG_T_PARENT_CHILD_D_2
+  (
+    SOURCE ,
+    GENERIC_ID ,
+    DIM_NAME ,
+    MEMBER ,
+    MEMBER_DESC 
+  ) 
+SELECT 
+  '#DW.Var_Source' ,
+  DISTINCT_.FLEX_VALUE_SET_ID ,
+  UPPER(REPLACE(REPLACE(TRIM(DISTINCT_.SEGMENT_NAME), ' ', '_'),'-','_')) ,
+  DISTINCT_.FLEX_VALUE ,
+  DISTINCT_.MEMBER_DESC  
+FROM 
+  (
+SELECT 
+  DISTINCT 
+  STG_FND_ID_FLEX_SEGMENTS.FLEX_VALUE_SET_ID AS FLEX_VALUE_SET_ID ,
+  STG_FND_ID_FLEX_SEGMENTS.SEGMENT_NAME AS SEGMENT_NAME ,
+  STG_FND_FLEX_VALUES_VL.FLEX_VALUE AS FLEX_VALUE ,
+  '#DW.Var_Source' AS SOURCE ,
+  STG_FND_ID_FLEX_SEGMENTS.FLEX_VALUE_SET_ID AS GENERIC_ID ,
+  STG_FND_ID_FLEX_SEGMENTS.SEGMENT_NAME AS DIM_NAME ,
+  STG_FND_FLEX_VALUES_VL.FLEX_VALUE AS MEMBER ,
+  STG_FND_FLEX_VALUES_VL.DESCRIPTION AS MEMBER_DESC   
+FROM 
+  DEV_STG_USP.STG_FND_FLEX_VALUES_VL STG_FND_FLEX_VALUES_VL  INNER JOIN  DEV_STG_USP.STG_FND_ID_FLEX_SEGMENTS STG_FND_ID_FLEX_SEGMENTS  
+    ON  STG_FND_ID_FLEX_SEGMENTS.FLEX_VALUE_SET_ID = STG_FND_FLEX_VALUES_VL.FLEX_VALUE_SET_ID
+--AND STG_OU_COA.COA_ID=STG_FND_ID_FLEX_SEGMENTS.ID_FLEX_NUM
+AND STG_FND_ID_FLEX_SEGMENTS.ID_FLEX_NUM in (#DW.Var_EBS_COA)
+WHERE
+  (STG_FND_ID_FLEX_SEGMENTS.APPLICATION_ID =101 
+AND STG_FND_ID_FLEX_SEGMENTS.ID_FLEX_CODE ='GL#'
+) 
+  ) DISTINCT_  
+       </Field>
+</Target>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+<SessStep>
+<Field name="Step Name">Load the top members of each dimensions to STG_T_PARENT_CHILD_D_1</Field>
+<Field name="Step No">2</Field>
+<Field name="Ok Exit">true</Field>
+<Field name="Ko Exit">true</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">MAP_MAIN</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_BEGIN</Field>
+<Field name="Task Name 1">SERIAL</Field>
+<Field name="Task Name 2">EU</Field>
+<Field name="Task Name 3">LGL_DW_STG_UNIT</Field>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_MAIN</Field>
+<Field name="Task Name 1">Insert new rows</Field>
+<Field name="Task Name 2">IKM SQL Control Append</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Commit Indicator">NO_COMMIT</Field>
+<Target>
+<Field name="Text"> 
+insert into	DEV_STG_USP.STG_T_PARENT_CHILD_D_1 
+( 
+    SOURCE,
+	GENERIC_ID,
+	DIM_NAME,
+	PARENT,
+	CHILD,
+	BASE_LEVEL_FLAG 
+) 
+select 	
+    DISTINCT_1.SOURCE AS SOURCE,
+	DISTINCT_1.GENERIC_ID AS GENERIC_ID,
+	DISTINCT_1.DIM_NAME AS DIM_NAME,
+	DISTINCT_1.DIM_NAME AS PARENT,
+	DISTINCT_1.PARENT AS CHILD,
+	'N' AS BASE_LEVEL_FLAG
+from	(
+SELECT 
+  DISTINCT 
+  STG_T_PARENT_CHILD_D_1.SOURCE AS SOURCE ,
+  STG_T_PARENT_CHILD_D_1.GENERIC_ID AS GENERIC_ID ,
+  STG_T_PARENT_CHILD_D_1.DIM_NAME AS DIM_NAME ,
+  STG_T_PARENT_CHILD_D_1.PARENT AS PARENT   
+FROM 
+  DEV_STG_USP.STG_T_PARENT_CHILD_D_1 STG_T_PARENT_CHILD_D_1  LEFT OUTER JOIN  DEV_STG_USP.STG_T_PARENT_CHILD_D_1 STG_T_PARENT_CHILD_D_12  
+    ON  STG_T_PARENT_CHILD_D_1.PARENT=STG_T_PARENT_CHILD_D_12.CHILD
+AND STG_T_PARENT_CHILD_D_1.DIM_NAME=STG_T_PARENT_CHILD_D_12.DIM_NAME
+AND STG_T_PARENT_CHILD_D_1.GENERIC_ID=STG_T_PARENT_CHILD_D_12.GENERIC_ID
+AND STG_T_PARENT_CHILD_D_1.SOURCE=STG_T_PARENT_CHILD_D_12.SOURCE
+WHERE
+  (STG_T_PARENT_CHILD_D_12.PARENT is null
+) 
+  ) DISTINCT_1
+where		(1=1)	
+  </Field>
+</Target>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">EX_UNIT_MAIN</Field>
+<Field name="Task Name 1">Commit transaction</Field>
+<Field name="Task Name 2">IKM SQL Control Append</Field>
+<Field name="Source Logical Schema Name">LGL_STG</Field>
+<Field name="Source Connection Name">STG</Field>
+<Field name="Source Isolation Level">DEFAULT</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Connection Name">STG</Field>
+<Field name="Target Commit Indicator">COMMIT</Field>
+<Target>
+<Field name="Text">/* commit */ </Field>
+</Target>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+</Session>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><Session>
+<Field name="Session Name">PRD_UPDATE_DIMENSION_LEVELS</Field>
+<Field name="Context Code">GLOBAL</Field>
+<SessStep>
+<Field name="Step Name">PRD_UPDATE_DIMENSION_LEVELS</Field>
+<Field name="Step No">1</Field>
+<Field name="Step Type">T</Field>
+<Field name="Ok Exit">0</Field>
+<Field name="Ko Exit">0</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">S</Field>
+<Field name="Task Name 1">Procedure</Field>
+<Field name="Task Name 2">PRD_UPDATE_DIMENSION_LEVELS</Field>
+<Field name="Task Name 3">Update the parent level hierarchy</Field>
+<Field name="Exe Channel">J</Field>
+<Field name="Source Context Code">GLOBAL</Field>
+<Field name="Target Context Code">GLOBAL</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Technology Internal Name">ORACLE</Field>
+<Default>
+<Field name="Text">\i redshift_procedures_updated.sql</Field>
+</Default>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+</Session>

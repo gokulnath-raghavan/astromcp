@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><Session>
+<Field name="Session Name">PRD_PRINT_VARIABLES_HIERARCHY_LEVELS</Field>
+<Field name="Context Code">GLOBAL</Field>
+<SessStep>
+<Field name="Step Name">PRD_PRINT_VARIABLES_HIERARCHY_LEVELS</Field>
+<Field name="Step No">1</Field>
+<Field name="Step Type">T</Field>
+<Field name="Ok Exit">0</Field>
+<Field name="Ko Exit">0</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">S</Field>
+<Field name="Task Name 1">Procedure</Field>
+<Field name="Task Name 2">PRD_PRINT_VARIABLES_HIERARCHY_LEVELS</Field>
+<Field name="Task Name 3">Print Variables for Hierarchy Levels</Field>
+<Field name="Exe Channel">B</Field>
+<Field name="Source Context Code">GLOBAL</Field>
+<Field name="Target Context Code">GLOBAL</Field>
+<Field name="Target Technology Internal Name">JYTHON</Field>
+<Default>
+<Field name="Text">raise("""
+Source = #DW.Var_Source
+Current Operating Unit = #DW.Var_Curr_Operating_Unit
+Current Dimension = #DW.Var_Dim_Name
+Dimension Table = #DW.Var_Dimension_Table 
+Maximum number of levels = #DW.Var_Curr_Dim_Max_Level
+Top members of the current dimension = #DW.Var_List_Dimension_Top_Members
+EBS Chart of Accounts = #DW.Var_EBS_COA
+Primary Column of the dimension = #DW.Var_Primary_Column_Name
+""") </Field>
+</Default>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+</Session>

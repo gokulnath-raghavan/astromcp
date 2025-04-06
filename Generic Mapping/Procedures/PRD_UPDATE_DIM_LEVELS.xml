@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><Session>
+<Field name="Session Name">PRD_UPDATE_DIM_LEVELS</Field>
+<Field name="Context Code">GLOBAL</Field>
+<SessStep>
+<Field name="Step Name">PRD_UPDATE_DIM_LEVELS</Field>
+<Field name="Step No">1</Field>
+<Field name="Step Type">T</Field>
+<Field name="Ok Exit">0</Field>
+<Field name="Ko Exit">0</Field>
+<StepLog>
+<SessTaskLog>
+<Field name="Task Type ">S</Field>
+<Field name="Task Name 1">Procedure</Field>
+<Field name="Task Name 2">PRD_UPDATE_DIM_LEVELS</Field>
+<Field name="Task Name 3">Populate Hierarchy Levels</Field>
+<Field name="Exe Channel">J</Field>
+<Field name="Source Context Code">GLOBAL</Field>
+<Field name="Target Context Code">GLOBAL</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Technology Internal Name">ORACLE</Field>
+<Default>
+<Field name="Text">UPDATE STG_#DW.Var_Dimension_Table_99 TARG
+SET #DW.Var_Dim_Child_Column_Num = 
+NVL(substr(concat_hier,instr(concat_hier,'|',1,#DW.Var_Counter)+1, instr(concat_hier,'|',1,to_number(#DW.Var_Counter)+1)-(instr(concat_hier,'|',1,#DW.Var_Counter)+1)),#DW.Var_Primary_Column_Name)</Field>
+</Default>
+</SessTaskLog>
+<SessTaskLog>
+<Field name="Task Type ">S</Field>
+<Field name="Task Name 1">Procedure</Field>
+<Field name="Task Name 2">PRD_UPDATE_DIM_LEVELS</Field>
+<Field name="Task Name 3">Update the parent description</Field>
+<Field name="Exe Channel">J</Field>
+<Field name="Source Context Code">GLOBAL</Field>
+<Field name="Target Context Code">GLOBAL</Field>
+<Field name="Target Logical Schema Name">LGL_STG</Field>
+<Field name="Target Technology Internal Name">ORACLE</Field>
+<Default>
+<Field name="Text">UPDATE STG_#DW.Var_Dimension_Table_99 TARG
+SET #DW.Var_Dim_Child_Column_Name=(Select max(MEMBER_DESC) from STG_T_PARENT_CHILD_D_2 where STG_T_PARENT_CHILD_D_2.MEMBER=TARG.#DW.Var_Dim_Child_Column_Num and STG_T_PARENT_CHILD_D_2.SOURCE='#DW.Var_Source' and STG_T_PARENT_CHILD_D_2.Dim_name='#DW.Var_Dim_Name' AND TARG.GENERIC_ID=STG_T_PARENT_CHILD_D_2.GENERIC_ID)
+where exists
+(select distinct NULL from STG_#DW.Var_Dimension_Table_99 TARG, STG_T_PARENT_CHILD_D_2 where STG_T_PARENT_CHILD_D_2.MEMBER=TARG.#DW.Var_Dim_Child_Column_Num and STG_T_PARENT_CHILD_D_2.SOURCE='#DW.Var_Source' and STG_T_PARENT_CHILD_D_2.Dim_name='#DW.Var_Dim_Name' AND TARG.GENERIC_ID=STG_T_PARENT_CHILD_D_2.GENERIC_ID)</Field>
+</Default>
+</SessTaskLog>
+</StepLog>
+</SessStep>
+</Session>

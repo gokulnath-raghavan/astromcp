@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astrology Readings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-2xl font-bold text-purple-600">AstroReadings</a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="/" class="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-purple-600">Home</a>
+                        <a href="/pricing" class="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-purple-600">Pricing</a>
+                        <a href="/dashboard" class="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-purple-600">Dashboard</a>
+                        <a href="/contact" class="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-purple-600">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-lg mt-8">
+        <div class="max-w-7xl mx-auto py-6 px-4">
+            <div class="text-center text-gray-600">
+                <p>&copy; 2024 AstroReadings. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 
