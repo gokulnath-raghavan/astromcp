@@ -1,0 +1,89 @@
+image: hashicorp/terraform
+
+pipelines:
+  custom:
+    undeploy-dev:
+      - step:
+          name: Undeploy
+          deployment: Development
+          script:
+            - apk update && apk add bash aws-cli
+            - chmod +x ./modules/docker-build/bin/build_image.sh
+            - chmod +x ./modules/docker-build/bin/image_md5.sh
+            - terraform init -backend-config=env/dev.conf
+            - terraform workspace select dev || terraform workspace new dev
+            - terraform destroy -auto-approve -var-file=env/ecr.tfvars
+          services:
+            - docker
+    undeploy-test:
+      - step:
+          name: Undeploy
+          deployment: Test
+          script:
+            - apk update && apk add bash aws-cli
+            - chmod +x ./modules/docker-build/bin/build_image.sh
+            - chmod +x ./modules/docker-build/bin/image_md5.sh
+            - terraform init -backend-config=env/test.conf
+            - terraform workspace select test || terraform workspace new test
+            - terraform destroy -auto-approve -var-file=env/ecr.tfvars
+          services:
+            - docker
+    undeploy-prod:
+      - step:
+          name: Undeploy
+          deployment: Production
+          script:
+            - apk update && apk add bash aws-cli
+            - chmod +x ./modules/docker-build/bin/build_image.sh
+            - chmod +x ./modules/docker-build/bin/image_md5.sh
+            - terraform init -backend-config=env/prod.conf
+            - terraform workspace select prod || terraform workspace new prod
+            - terraform destroy -auto-approve -var-file=env/ecr.tfvars
+          services:
+            - docker
+  default:
+    - step:
+        name: 'Security scan'
+        script:
+          # Run a security scan for sensitive data.
+          # See more security tools at https://bitbucket.org/product/features/pipelines/integrations?&category=security
+          - pipe: atlassian/git-secrets-scan:0.5.1
+    - step:
+        name: 'Deploy to Development'
+        deployment: Development
+        script:
+          - apk update && apk add bash aws-cli
+          - chmod +x ./modules/docker-build/bin/build_image.sh
+          - chmod +x ./modules/docker-build/bin/image_md5.sh
+          - terraform init -backend-config=env/dev.conf
+          - terraform workspace select dev || terraform workspace new dev
+          - terraform plan -var-file=env/ecr.tfvars
+          - terraform apply -auto-approve -var-file=env/ecr.tfvars
+        services:
+          - docker
+    - step:
+        name: 'Deploy to Test'
+        trigger: 'manual'
+        deployment: Test
+        script:
+          - apk update && apk add bash aws-cli
+          - chmod +x ./modules/docker-build/bin/build_image.sh
+          - chmod +x ./modules/docker-build/bin/image_md5.sh
+          - terraform init -backend-config=env/test.conf
+          - terraform workspace select test || terraform workspace new test
+          - terraform apply -auto-approve -var-file=env/ecr.tfvars
+        services:
+          - docker
+    - step:
+        name: 'Deploy to Production'
+        trigger: 'manual'
+        deployment: Production
+        script:
+          - apk update && apk add bash aws-cli
+          - chmod +x ./modules/docker-build/bin/build_image.sh
+          - chmod +x ./modules/docker-build/bin/image_md5.sh
+          - terraform init -backend-config=env/prod.conf
+          - terraform workspace select prod || terraform workspace new prod
+          - terraform apply -auto-approve -var-file=env/ecr.tfvars
+        services:
+          - docker

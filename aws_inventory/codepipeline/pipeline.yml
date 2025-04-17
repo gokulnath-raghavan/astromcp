@@ -1,0 +1,248 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CodePipeline for AWS Inventory Management System'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: aws-inventory
+  Environment:
+    Type: String
+    Default: dev
+  GitHubOwner:
+    Type: String
+  GitHubRepo:
+    Type: String
+  GitHubBranch:
+    Type: String
+    Default: main
+  GitHubToken:
+    Type: String
+    NoEcho: true
+
+Resources:
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                  - codebuild:*
+                  - cloudformation:*
+                  - iam:PassRole
+                Resource: '*'
+
+  PipelineBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${ProjectName}-pipeline-${Environment}'
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub '${ProjectName}-pipeline-${Environment}'
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceOutput
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref BuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+            - Name: DeployInfrastructure
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub '${ProjectName}-infrastructure-${Environment}'
+                TemplatePath: BuildOutput::terraform/template.yml
+                Capabilities: CAPABILITY_IAM
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+
+            - Name: DeployGlueJob
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: Lambda
+              Configuration:
+                FunctionName: !Ref DeployGlueJobFunction
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 2
+
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${ProjectName}-build-${Environment}'
+      ServiceRole: !GetAtt BuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              commands:
+                - pip install -r requirements.txt
+                - pip install awscli
+            build:
+              commands:
+                - python -m pytest test/
+                - cd src && zip -r ../glue_job.zip .
+                - cd terraform && terraform init && terraform plan -out=tfplan
+          artifacts:
+            files:
+              - '**/*'
+            name: BuildOutput
+
+  BuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                  - cloudformation:*
+                  - iam:PassRole
+                Resource: '*'
+
+  DeployGlueJobFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: python3.9
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          
+          def lambda_handler(event, context):
+              glue = boto3.client('glue')
+              s3 = boto3.client('s3')
+              
+              # Get environment from event
+              environment = event['environment']
+              project_name = event['project_name']
+              
+              # Upload Glue job package
+              s3.upload_file('glue_job.zip', 
+                           f'{project_name}-inventory-{environment}', 
+                           'glue_job.zip')
+              
+              # Create/Update Glue job
+              glue.create_job(
+                  Name=f'{project_name}-inventory-collector-{environment}',
+                  Role=f'arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/{project_name}-glue-role-{environment}',
+                  Command={
+                      'Name': 'pythonshell',
+                      'ScriptLocation': f's3://{project_name}-inventory-{environment}/glue_job.zip',
+                      'PythonVersion': '3.9'
+                  },
+                  DefaultArguments={
+                      '--job-language': 'python',
+                      '--extra-py-files': f's3://{project_name}-inventory-{environment}/glue_job.zip',
+                      '--enable-metrics': '',
+                      '--enable-continuous-cloudwatch-log': 'true',
+                      '--enable-spark-ui': 'true',
+                      '--spark-event-logs-path': f's3://{project_name}-inventory-{environment}/spark-logs/'
+                  },
+                  MaxRetries=0,
+                  Timeout=2880,
+                  MaxCapacity=0.0625,
+                  GlueVersion='3.0',
+                  NumberOfWorkers=2,
+                  WorkerType='G.1X'
+              )
+              
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('Glue job deployed successfully!')
+              }
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                  - glue:*
+                  - iam:PassRole
+                Resource: '*' 

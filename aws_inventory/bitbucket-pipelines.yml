@@ -1,0 +1,55 @@
+image: hashicorp/terraform:1.0.0
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Deploy to Production
+          deployment: production
+          script:
+            - apk add --no-cache python3 py3-pip aws-cli
+            - pip3 install -r requirements.txt
+            - cd terraform
+            - terraform init
+            - terraform plan -var="environment=prod" -var="project_name=aws-inventory"
+            - terraform apply -auto-approve -var="environment=prod" -var="project_name=aws-inventory"
+            - cd ..
+            - cd src
+            - zip -r ../glue_job.zip .
+            - cd ..
+            - aws s3 cp glue_job.zip s3://aws-inventory-inventory-prod/glue_job.zip
+            - aws glue create-job --name "aws-inventory-inventory-collector-prod" --role "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/aws-inventory-glue-role-prod" --command "{\"Name\":\"pythonshell\",\"ScriptLocation\":\"s3://aws-inventory-inventory-prod/glue_job.zip\",\"PythonVersion\":\"3.9\"}" --default-arguments "{\"--job-language\":\"python\",\"--extra-py-files\":\"s3://aws-inventory-inventory-prod/glue_job.zip\",\"--enable-metrics\":\"\",\"--enable-continuous-cloudwatch-log\":\"true\",\"--enable-spark-ui\":\"true\",\"--spark-event-logs-path\":\"s3://aws-inventory-inventory-prod/spark-logs/\"}" --max-retries 0 --timeout 2880 --max-capacity 0.0625 --glue-version "3.0" --number-of-workers 2 --worker-type "G.1X"
+            - aws glue create-trigger --name "aws-inventory-inventory-trigger-prod" --type "SCHEDULED" --schedule "cron(0 12 * * ? *)" --actions "JobName=aws-inventory-inventory-collector-prod" --start-on-creation
+
+    develop:
+      - step:
+          name: Deploy to Development
+          deployment: development
+          script:
+            - apk add --no-cache python3 py3-pip aws-cli
+            - pip3 install -r requirements.txt
+            - cd terraform
+            - terraform init
+            - terraform plan -var="environment=dev" -var="project_name=aws-inventory"
+            - terraform apply -auto-approve -var="environment=dev" -var="project_name=aws-inventory"
+            - cd ..
+            - cd src
+            - zip -r ../glue_job.zip .
+            - cd ..
+            - aws s3 cp glue_job.zip s3://aws-inventory-inventory-dev/glue_job.zip
+            - aws glue create-job --name "aws-inventory-inventory-collector-dev" --role "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/aws-inventory-glue-role-dev" --command "{\"Name\":\"pythonshell\",\"ScriptLocation\":\"s3://aws-inventory-inventory-dev/glue_job.zip\",\"PythonVersion\":\"3.9\"}" --default-arguments "{\"--job-language\":\"python\",\"--extra-py-files\":\"s3://aws-inventory-inventory-dev/glue_job.zip\",\"--enable-metrics\":\"\",\"--enable-continuous-cloudwatch-log\":\"true\",\"--enable-spark-ui\":\"true\",\"--spark-event-logs-path\":\"s3://aws-inventory-inventory-dev/spark-logs/\"}" --max-retries 0 --timeout 2880 --max-capacity 0.0625 --glue-version "3.0" --number-of-workers 2 --worker-type "G.1X"
+            - aws glue create-trigger --name "aws-inventory-inventory-trigger-dev" --type "SCHEDULED" --schedule "cron(0 12 * * ? *)" --actions "JobName=aws-inventory-inventory-collector-dev" --start-on-creation
+
+  pull-requests:
+    '**':
+      - step:
+          name: Run Tests
+          script:
+            - apk add --no-cache python3 py3-pip
+            - pip3 install -r requirements.txt
+            - python3 -m pytest test/
+
+definitions:
+  services:
+    docker:
+      memory: 2048 

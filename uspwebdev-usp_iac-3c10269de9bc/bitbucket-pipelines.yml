@@ -1,0 +1,69 @@
+# Template Terraform to deploy to Cloud Infrastructure
+
+# This template allows you to deploy your infrastructure using Terraform to supported cloud providers.
+# The workflow allows running tests, security scans on feature branches (as well as master).
+# After merging code to master the infrastructure will be deployed to cloud according to the given terraform template.
+
+# Prerequisites: credentials according to used cloud provider.
+# For advanced cases, please, follow terraform docs https://www.terraform.io/docs/index.html.
+
+
+image: hashicorp/terraform
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Test
+            script:
+              - terraform init 
+              - terraform workspace select dev || terraform workspace new dev
+              - terraform validate
+        - step:
+            name: Security Scan
+            script:
+              # Run a security scan for sensitive data.
+              # See more security tools at https://bitbucket.org/product/features/pipelines/integrations?&category=security
+              - pipe: atlassian/git-secrets-scan:0.5.1
+  branches:
+    usp_iac:
+        - step:
+            name: Security Scan
+            script:
+              # Run a security scan for sensitive data.
+              # See more security tools at https://bitbucket.org/product/features/pipelines/integrations?&category=security
+              - pipe: atlassian/git-secrets-scan:0.5.1
+        - step:
+            name: Prepare workspaces
+            script:
+              - terraform init
+              - terraform workspace select prod || terraform workspace new prod
+              - terraform workspace select test || terraform workspace new test
+              - terraform workspace select dev || terraform workspace new dev
+        - step:
+            name: Deploy to Development
+            deployment: Development
+            trigger: manual
+            script:
+              - terraform init 
+              - terraform workspace select dev || terraform workspace new dev
+              - terraform plan -var-file=env/tf-resources.tfvars -var-file=env/dev.tfvars
+              - terraform apply -auto-approve -var-file=env/tf-resources.tfvars -var-file=env/dev.tfvars -var "usp_aws_access_key=${AWS_ACCESS_KEY_ID}" -var "usp_aws_secret_key=${AWS_SECRET_ACCESS_KEY}"
+        - step:
+            name: Deploy to Test
+            deployment: Test
+            trigger: manual
+            script:
+              - terraform init 
+              - terraform workspace select test || terraform workspace new test
+              - terraform plan -var-file=env/tf-resources.tfvars -var-file=env/test.tfvars
+              - terraform apply -auto-approve -var-file=env/tf-resources.tfvars -var-file=env/test.tfvars -var "usp_aws_access_key=${AWS_ACCESS_KEY_ID}" -var "usp_aws_secret_key=${AWS_SECRET_ACCESS_KEY}"
+        - step:
+            name: Deploy to Production
+            deployment: Production
+            trigger: manual
+            script:
+              - terraform init 
+              - terraform workspace select prod || terraform workspace new prod
+              - terraform plan -var-file=env/tf-resources.tfvars -var-file=env/prod.tfvars
+              - terraform apply -auto-approve -var-file=env/tf-resources.tfvars -var-file=env/prod.tfvars -var "usp_aws_access_key=${AWS_ACCESS_KEY_ID}" -var "usp_aws_secret_key=${AWS_SECRET_ACCESS_KEY}"

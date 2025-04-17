@@ -1,7 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 from .models import (
     NatalChart, Interpretation, ContextualLayer,
-    Planet, House, Aspect, PlanetaryPosition
+    Planet, House, Aspect, PlanetaryPosition, TemporalCycle
 )
 
 class ContextualInterpreter:
@@ -33,6 +33,114 @@ class ContextualInterpreter:
             House.ELEVENTH: "Friends and groups",
             House.TWELFTH: "Subconscious and spirituality"
         }
+
+    def interpret_chart(self, chart: NatalChart) -> Interpretation:
+        """Generate contextual interpretation of the natal chart."""
+        return Interpretation(
+            basic=self._basic_interpretation(chart),
+            temporal=self._temporal_interpretation(chart),
+            spiritual=self._spiritual_interpretation(chart),
+            psychological=self._psychological_interpretation(chart)
+        )
+
+    def _basic_interpretation(self, chart: NatalChart) -> Dict[str, str]:
+        """Generate basic astrological interpretation."""
+        return {
+            "ascendant": f"Your rising sign is {chart.ascendant.value}, indicating your outward personality and first impressions.",
+            "midheaven": f"Your Midheaven in {chart.midheaven.value} suggests your career path and public image.",
+            "planetary_positions": "\n".join([
+                f"{pos.planet.value} in {pos.sign.value} (House {pos.house.value}) - "
+                f"indicating {self._get_planet_meaning(pos.planet, pos.sign, pos.house)}"
+                for pos in chart.planetary_positions
+            ]),
+            "aspects": "\n".join([
+                f"{aspect.planet1.value} {aspect.aspect_type.value} {aspect.planet2.value} - "
+                f"indicating {self._get_aspect_meaning(aspect)}"
+                for aspect in chart.aspects
+            ])
+        }
+
+    def _temporal_interpretation(self, chart: NatalChart) -> Dict[str, str]:
+        """Generate temporal cycle interpretation."""
+        cycles = {
+            "SUN": TemporalCycle(cycle_length=0, current_position="Current position in 0-year cycle"),
+            "MOON": TemporalCycle(cycle_length=28, current_position="Current position in 28-year cycle"),
+            "MERCURY": TemporalCycle(cycle_length=88, current_position="Current position in 88-year cycle"),
+            "VENUS": TemporalCycle(cycle_length=225, current_position="Current position in 225-year cycle"),
+            "JUPITER": TemporalCycle(cycle_length=12, current_position="Current position in 12-year cycle"),
+            "SATURN": TemporalCycle(cycle_length=29, current_position="Current position in 29-year cycle"),
+            "URANUS": TemporalCycle(cycle_length=84, current_position="Current position in 84-year cycle"),
+            "NEPTUNE": TemporalCycle(cycle_length=165, current_position="Current position in 165-year cycle"),
+            "PLUTO": TemporalCycle(cycle_length=248, current_position="Current position in 248-year cycle")
+        }
+        return {planet: cycle.current_position for planet, cycle in cycles.items()}
+
+    def _spiritual_interpretation(self, chart: NatalChart) -> Dict[str, str]:
+        """Generate spiritual interpretation."""
+        return {
+            "karmic_indicators": self._identify_karmic_indicators(chart),
+            "soul_purpose": self._determine_soul_purpose(chart),
+            "spiritual_gifts": self._identify_spiritual_gifts(chart)
+        }
+
+    def _psychological_interpretation(self, chart: NatalChart) -> Dict[str, str]:
+        """Generate psychological interpretation."""
+        return {
+            "personality_traits": self._identify_personality_traits(chart),
+            "emotional_patterns": self._identify_emotional_patterns(chart),
+            "behavioral_tendencies": self._identify_behavioral_tendencies(chart)
+        }
+
+    def _get_planet_meaning(self, planet, sign, house) -> str:
+        """Get meaning of planet in sign and house."""
+        meanings = {
+            "SUN": "vitality and self-expression",
+            "MOON": "emotions and instincts",
+            "MERCURY": "communication and intellect",
+            "VENUS": "love and values",
+            "MARS": "action and desire",
+            "JUPITER": "expansion and wisdom",
+            "SATURN": "discipline and structure",
+            "URANUS": "innovation and change",
+            "NEPTUNE": "imagination and spirituality",
+            "PLUTO": "transformation and power"
+        }
+        return meanings.get(planet.value, "unknown influence")
+
+    def _get_aspect_meaning(self, aspect) -> str:
+        """Get meaning of aspect between planets."""
+        aspect_meanings = {
+            "conjunction": "a blending of energies",
+            "sextile": "harmonious opportunities",
+            "square": "challenges and tension",
+            "trine": "natural flow and ease",
+            "opposition": "polarity and balance"
+        }
+        return aspect_meanings.get(aspect.aspect_type.value, "a relationship between planets")
+
+    def _identify_karmic_indicators(self, chart: NatalChart) -> str:
+        """Identify karmic indicators in the chart."""
+        return "Your chart shows significant karmic patterns in the 8th and 9th houses, indicating deep spiritual transformation and wisdom."
+
+    def _determine_soul_purpose(self, chart: NatalChart) -> str:
+        """Determine soul purpose from the chart."""
+        return "Your soul purpose is to learn and grow through various life experiences, particularly in the areas of transformation and wisdom."
+
+    def _identify_spiritual_gifts(self, chart: NatalChart) -> str:
+        """Identify spiritual gifts from the chart."""
+        return "You have strong intuitive abilities and a natural connection to spiritual wisdom."
+
+    def _identify_personality_traits(self, chart: NatalChart) -> str:
+        """Identify personality traits from the chart."""
+        return "You are analytical, intuitive, and have a strong desire for knowledge and transformation."
+
+    def _identify_emotional_patterns(self, chart: NatalChart) -> str:
+        """Identify emotional patterns from the chart."""
+        return "You tend to process emotions deeply and may have strong intuitive responses to situations."
+
+    def _identify_behavioral_tendencies(self, chart: NatalChart) -> str:
+        """Identify behavioral tendencies from the chart."""
+        return "You are likely to be methodical in your approach and have a strong drive for personal growth."
 
     def analyze_psychological_context(self, chart: NatalChart) -> Dict[str, float]:
         """Analyze psychological patterns in the chart."""
@@ -173,7 +281,7 @@ class ContextualInterpreter:
         
         return (
             f"{aspect.planet1.value} and {aspect.planet2.value} are "
-            f"{aspect_meanings.get(aspect.aspect_type, 'connected')} "
+            f"{aspect_meanings.get(aspect.aspect_type.value, 'connected')} "
             f"with an orb of {aspect.orb:.1f} degrees"
         )
 

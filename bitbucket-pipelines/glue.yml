@@ -1,0 +1,48 @@
+image: python:3.9
+
+pipelines:
+  branches:
+    develop:
+      - step:
+          name: Deploy Glue Scripts to Dev
+          script:
+            - pip install awscli
+            - aws s3 sync etl_project/glue_scripts/ s3://${DEV_GLUE_SCRIPTS_BUCKET}/ --exclude "*.pyc" --exclude "__pycache__/*"
+            - aws glue start-job-run --job-name "raw_to_normalize" --arguments '{"--environment": "dev"}'
+            - aws glue start-job-run --job-name "normalize_to_stage" --arguments '{"--environment": "dev"}'
+            - aws glue start-job-run --job-name "stage_to_intermediate" --arguments '{"--environment": "dev"}'
+            - aws glue start-job-run --job-name "intermediate_to_dimension" --arguments '{"--environment": "dev"}'
+            - aws glue start-job-run --job-name "intermediate_to_fact" --arguments '{"--environment": "dev"}'
+
+    test:
+      - step:
+          name: Deploy Glue Scripts to Test
+          script:
+            - pip install awscli
+            - aws s3 sync etl_project/glue_scripts/ s3://${TEST_GLUE_SCRIPTS_BUCKET}/ --exclude "*.pyc" --exclude "__pycache__/*"
+            - aws glue start-job-run --job-name "raw_to_normalize" --arguments '{"--environment": "test"}'
+            - aws glue start-job-run --job-name "normalize_to_stage" --arguments '{"--environment": "test"}'
+            - aws glue start-job-run --job-name "stage_to_intermediate" --arguments '{"--environment": "test"}'
+            - aws glue start-job-run --job-name "intermediate_to_dimension" --arguments '{"--environment": "test"}'
+            - aws glue start-job-run --job-name "intermediate_to_fact" --arguments '{"--environment": "test"}'
+
+    master:
+      - step:
+          name: Deploy Glue Scripts to Prod
+          script:
+            - pip install awscli
+            - aws s3 sync etl_project/glue_scripts/ s3://${PROD_GLUE_SCRIPTS_BUCKET}/ --exclude "*.pyc" --exclude "__pycache__/*"
+            - aws glue start-job-run --job-name "raw_to_normalize" --arguments '{"--environment": "prod"}'
+            - aws glue start-job-run --job-name "normalize_to_stage" --arguments '{"--environment": "prod"}'
+            - aws glue start-job-run --job-name "stage_to_intermediate" --arguments '{"--environment": "prod"}'
+            - aws glue start-job-run --job-name "intermediate_to_dimension" --arguments '{"--environment": "prod"}'
+            - aws glue start-job-run --job-name "intermediate_to_fact" --arguments '{"--environment": "prod"}'
+
+definitions:
+  services:
+    aws:
+      image: amazon/aws-cli
+      variables:
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - AWS_DEFAULT_REGION 

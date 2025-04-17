@@ -3,33 +3,33 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
 
-class Planet(Enum):
-    SUN = "Sun"
-    MOON = "Moon"
-    MERCURY = "Mercury"
-    VENUS = "Venus"
-    MARS = "Mars"
-    JUPITER = "Jupiter"
-    SATURN = "Saturn"
-    URANUS = "Uranus"
-    NEPTUNE = "Neptune"
-    PLUTO = "Pluto"
+class Planet(str, Enum):
+    SUN = "SUN"
+    MOON = "MOON"
+    MERCURY = "MERCURY"
+    VENUS = "VENUS"
+    MARS = "MARS"
+    JUPITER = "JUPITER"
+    SATURN = "SATURN"
+    URANUS = "URANUS"
+    NEPTUNE = "NEPTUNE"
+    PLUTO = "PLUTO"
 
-class ZodiacSign(Enum):
-    ARIES = "Aries"
-    TAURUS = "Taurus"
-    GEMINI = "Gemini"
-    CANCER = "Cancer"
-    LEO = "Leo"
-    VIRGO = "Virgo"
-    LIBRA = "Libra"
-    SCORPIO = "Scorpio"
-    SAGITTARIUS = "Sagittarius"
-    CAPRICORN = "Capricorn"
-    AQUARIUS = "Aquarius"
-    PISCES = "Pisces"
+class Sign(str, Enum):
+    ARIES = "ARIES"
+    TAURUS = "TAURUS"
+    GEMINI = "GEMINI"
+    CANCER = "CANCER"
+    LEO = "LEO"
+    VIRGO = "VIRGO"
+    LIBRA = "LIBRA"
+    SCORPIO = "SCORPIO"
+    SAGITTARIUS = "SAGITTARIUS"
+    CAPRICORN = "CAPRICORN"
+    AQUARIUS = "AQUARIUS"
+    PISCES = "PISCES"
 
-class House(Enum):
+class House(int, Enum):
     FIRST = 1
     SECOND = 2
     THIRD = 3
@@ -43,36 +43,44 @@ class House(Enum):
     ELEVENTH = 11
     TWELFTH = 12
 
+class AspectType(str, Enum):
+    CONJUNCTION = "conjunction"
+    SEXTILE = "sextile"
+    SQUARE = "square"
+    TRINE = "trine"
+    OPPOSITION = "opposition"
+
 class PlanetaryPosition(BaseModel):
     planet: Planet
-    sign: ZodiacSign
+    sign: Sign
     degree: float
     house: House
-    retrograde: bool = False
+    retrograde: bool
 
 class Aspect(BaseModel):
     planet1: Planet
     planet2: Planet
-    aspect_type: str  # conjunction, opposition, trine, etc.
+    aspect_type: AspectType
     orb: float
-    exact_degree: float
+    degree: float
 
-class NatalChart(BaseModel):
-    birth_time: datetime
-    birth_location: Dict[str, float]  # latitude, longitude
-    planetary_positions: List[PlanetaryPosition]
-    aspects: List[Aspect]
-    ascendant: ZodiacSign
-    midheaven: ZodiacSign
-    additional_context: Optional[Dict[str, Any]] = None
+class TemporalCycle(BaseModel):
+    cycle_length: int
+    current_position: str
 
 class ContextualLayer(BaseModel):
-    psychological: Optional[Dict[str, float]] = None
-    cultural: Optional[Dict[str, str]] = None
-    temporal: Optional[Dict[str, datetime]] = None
+    temporal: Dict[str, TemporalCycle]
+    spiritual: Dict[str, str]
+    psychological: Dict[str, str]
+
+class NatalChart(BaseModel):
+    planetary_positions: List[PlanetaryPosition]
+    aspects: List[Aspect]
+    ascendant: Sign
+    midheaven: Sign
 
 class Interpretation(BaseModel):
-    planetary_interpretation: Dict[Planet, str]
-    aspect_interpretation: Dict[str, str]
-    house_interpretation: Dict[House, str]
-    contextual_insights: ContextualLayer 
+    basic: Dict[str, str]
+    temporal: Dict[str, str]
+    spiritual: Dict[str, str]
+    psychological: Dict[str, str] 

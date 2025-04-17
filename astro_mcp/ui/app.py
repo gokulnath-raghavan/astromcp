@@ -55,30 +55,6 @@ st.markdown(f"""
     Visit us at: [{DOMAIN}]({BASE_URL})
 """)
 
-# API Key Configuration
-with st.sidebar:
-    st.header("API Configuration")
-    user_id = st.text_input(
-        "User ID",
-        value="639454",  # Your user ID
-        help="Your AstrologyAPI User ID"
-    )
-    api_key = st.text_input(
-        "API Key",
-        value="0a2ba88ba63a2ca0cff8da7b6ed3a8616a8214ff",  # Your API key
-        type="password",
-        help="Your AstrologyAPI API Key"
-    )
-    
-    if not user_id or not api_key:
-        st.warning("""
-            Please enter your AstrologyAPI credentials to continue.
-            You can find these in your AstrologyAPI dashboard:
-            1. User ID: 639454
-            2. API Key: Your generated API key
-        """)
-        st.stop()
-
 # Birth Information
 with st.sidebar:
     st.header("Birth Information")
@@ -87,35 +63,60 @@ with st.sidebar:
     latitude = st.number_input("Birth Latitude", value=0.0, step=0.1)
     longitude = st.number_input("Birth Longitude", value=0.0, step=0.1)
     timezone = st.text_input("Timezone (optional)", "UTC")
-    
     include_contextual = st.checkbox("Include Contextual Analysis", value=True)
-    
-    if st.button("Generate Chart"):
-        birth_datetime = datetime.datetime.combine(birth_date, birth_time)
-        calculator = AstroCalculator(user_id, api_key)
+
+# Create birth datetime
+birth_datetime = datetime.datetime.combine(birth_date, birth_time)
+
+# Initialize calculator
+calculator = AstroCalculator()
+
+# Generate chart
+if st.button("Generate Chart"):
+    try:
+        # Generate natal chart
+        chart = calculator.generate_natal_chart(birth_datetime, latitude, longitude)
         
-        try:
-            with st.spinner("Generating chart..."):
-                chart = calculator.generate_natal_chart(
-                    birth_datetime,
-                    latitude,
-                    longitude
-                )
-                
-                # Store chart data in session state
-                st.session_state['chart'] = chart
-                st.session_state['birth_datetime'] = birth_datetime
-                st.session_state['latitude'] = latitude
-                st.session_state['longitude'] = longitude
-                
-                if include_contextual:
-                    interpreter = ContextualInterpreter()
-                    st.session_state['interpretation'] = interpreter.interpret_chart(chart)
-                
-                st.success("Chart generated successfully!")
-        except Exception as e:
-            st.error(f"Error generating chart: {str(e)}")
-            st.stop()
+        # Display chart information
+        st.header("Natal Chart")
+        
+        # Display planetary positions
+        st.subheader("Planetary Positions")
+        for position in chart.planetary_positions:
+            st.write(f"{position.planet.name}: {position.sign.name} {position.degree:.2f}° (House {position.house.value})" + 
+                    (" (Retrograde)" if position.retrograde else ""))
+        
+        # Display aspects
+        st.subheader("Aspects")
+        for aspect in chart.aspects:
+            st.write(f"{aspect.planet1.name} {aspect.aspect_type} {aspect.planet2.name} ({aspect.orb:.2f}° orb)")
+        
+        # Display ascendant and midheaven
+        st.subheader("Angles")
+        st.write(f"Ascendant: {chart.ascendant.name}")
+        st.write(f"Midheaven: {chart.midheaven.name}")
+        
+        # Get Tamil horoscope details
+        tamil_horoscope = calculator.get_tamil_horoscope(birth_datetime, latitude, longitude)
+        st.subheader("Tamil Horoscope")
+        st.json(tamil_horoscope)
+        
+        # Get Nakshatra details
+        nakshatra_details = calculator.get_nakshatra_details(birth_datetime, latitude, longitude)
+        st.subheader("Nakshatra Details")
+        st.write(f"Nakshatra: {nakshatra_details['nakshatra']}")
+        st.write(f"Pada: {nakshatra_details['pada']}")
+        st.write(f"Moon Degree: {nakshatra_details['moon_degree']:.2f}°")
+        st.write(f"Moon Sign: {nakshatra_details['moon_sign']}")
+        
+        if include_contextual:
+            interpreter = ContextualInterpreter()
+            interpretation = interpreter.interpret_chart(chart)
+            st.subheader("Contextual Interpretation")
+            st.write(interpretation)
+            
+    except Exception as e:
+        st.error(f"Error generating chart: {str(e)}")
 
 # Main content area
 if 'chart' in st.session_state:
